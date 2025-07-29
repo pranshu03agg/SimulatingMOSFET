@@ -1,0 +1,85 @@
+go atlas 
+
+# Mesh definition
+mesh space.mult=1.0
+x.mesh loc=0.0   spac=0.01
+x.mesh loc=0.2   spac=0.001
+x.mesh loc=0.26  spac=0.01
+x.mesh loc=0.3   spac=0.001
+x.mesh loc=0.4   spac=0.01
+x.mesh loc=0.5   spac=0.01
+
+y.mesh loc=0.00  spac=0.001
+y.mesh loc=0.002 spac=0.001
+y.mesh loc=0.005 spac=0.001
+y.mesh loc=0.035 spac=0.001
+y.mesh loc=0.065 spac=0.001
+
+# Region definition
+region number=1 x.min=0 y.min=0 material=Air
+region number=2 x.min=0.2 x.max=0.3 y.min=0.002 y.max=0.005 material=SiO2
+region number=3 x.min=0 x.max=0.2 y.min=0.005 y.max=0.035 material=Silicon
+region number=4 x.min=0.3 x.max=0.5 y.min=0.005 y.max=0.035 material=Silicon
+region number=5 x.min=0.2 x.max=0.3 y.min=0.005 y.max=0.035 material=Silicon
+region number=6 x.min=0 x.max=0.5 y.min=0.035 y.max=0.065 material=Silicon
+
+# Electrode definition (use correct region number for each electrode)
+electrode name=gate   x.min=0.2 x.max=0.3 y.min=0 y.max=0.002
+electrode name=source x.min=0   x.max=0.1 y.min=0.002 y.max=0.005
+electrode name=drain  x.min=0.4 x.max=0.5 y.min=0.002 y.max=0.005
+
+# Doping definitions
+doping uniform concentration=1e18 p.type region=6
+doping uniform concentration=1e20 p.type region=3
+doping uniform concentration=1e17 p.type region=4
+doping uniform concentration=1e20 p.type region=5
+
+# Interface trap definition
+inter qf=3e10 y.max=0.005
+
+# Contact properties
+contact name=gate workfun=4.6
+contact name=source
+contact name=drain
+
+# Physical models
+models conmob srh auger bgn fldmob print
+
+# Solver settings
+method newton trap
+
+# Output specification
+output val.band con.band qfn qfp e.field j.electron j.hole j.conduction j.total ex.field ey.field flowline e.mobility h.mobility qss e.temp h.temp j.disp
+
+
+# Biasing for DC solution
+solve init
+solve prev
+solve vdrain=0.0
+solve vdrain=1
+solve vdrain=2
+
+# AC analysis
+logout outf=trial.log master
+solve ac freq=1e6 vgate=0 vstep=1 vfinal=10 name=gate
+
+# Save and plot results
+save outf=trial.str
+tonyplot trial.str
+tonyplot trial.log
+# ----- OUTPUT CHARACTERISTIC (Id vs Vd) -----
+log outf=iv_output.log
+solve vgatetop=10 name=gatetop
+solve vgatebot=0.0 name=gatebot
+solve vdrain=0.0 vstep=1 vfinal=10 name=drain
+log off
+
+# ----- SAVE STRUCTURE -----
+save outf=mosfet_dualgate.str
+
+# ----- LAUNCH TONY PLOT -----
+tonyplot mosfet_dualgate.str
+tonyplot iv_transfer.log
+tonyplot iv_output.log
+
+
